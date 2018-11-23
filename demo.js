@@ -43,8 +43,8 @@ class Cell {
     this.isRoot = !parentCell;
 
     this.bodyBendingTendency = 0.3;
-    this.branchingTendency = 0.9;
-    this.branchAngularTendency = 0.3;
+    this.branchingTendency = 0.5;
+    this.branchAngularTendency = 0.5;
 
     if (this.isRoot) {
       this.maxOrder = 40;
@@ -54,16 +54,16 @@ class Cell {
       this.maxLength = 10 + 40 * Math.random();
     } else {
       this.parentCell = parentCell;
-      this.thickness = Math.max(1, 0.3 * parentCell.thickness);
+      this.thickness = Math.max(1, 0.1 * parentCell.thickness);
       this.order = parentCell.order + 1;
-      this.maxLength = (Math.random() * 500) / (10 + this.order);
+      this.maxLength = (Math.random() * 300) / (2 + this.order);
       this.body = Vector.rotate(
         Vector.normalise(parentCell.body),
         branchingAngle
       );
       this.maxOrder = parentCell.maxOrder + Math.random() * 0.5;
     }
-    this.maxThickness = 14 / (2 + this.order);
+    this.maxThickness = 40 / (5 + this.order);
     this.children = [];
     const leafAngle = (Math.random() - 0.5) * 0.1;
     this.leaf = Vector.rotate(Vector.normalise(this.body), leafAngle);
@@ -76,7 +76,7 @@ class Cell {
 
 function growCell(cell) {
   const length = Vector.length(cell.body);
-  cell.showLeaf = cell.thickness < 2;
+  cell.showLeaf = cell.thickness < 5;
   const normalisedLeaf = Vector.normalise(cell.leaf);
   const leafSunDot = Vector.dot(normalisedLeaf, sunRay);
   const leafSunPlaneSize = Math.max(0, -leafSunDot);
@@ -87,7 +87,7 @@ function growCell(cell) {
     cell.body = Vector.stretchBy(cell.body, 0.5 * growthScale);
 
   if (cell.order < cell.maxOrder) {
-    if (length > 5 && cell.children.length <= 0 && cell.thickness > 1.5) {
+    if (length > 3 && cell.children.length <= 0 && cell.thickness > 1.8) {
       const angleSign = Math.random() > 0.5 ? 1 : -1;
       const bodyAngle = Math.random() * cell.bodyBendingTendency * angleSign;
       cell.children.push(new Cell(cell, bodyAngle));
@@ -103,8 +103,10 @@ function growCell(cell) {
     }
   }
 
-  // const leafRotateAngle = (Math.random() - 0.5) * 0.2;
-  // cell.leaf = Vector.rotate(cell.leaf, leafRotateAngle);
+  const rotateAmount = 0.1 / (0.1 + cell.thickness * 5 + leafSunPlaneSize);
+
+  const bodyRotateAngle = (Math.random() - 0.5) * rotateAmount;
+  cell.body = Vector.rotate(cell.body, bodyRotateAngle);
 
   cell.children.forEach(childCell => {
     growCell(childCell);
