@@ -183,7 +183,7 @@ function growCell(cell) {
     const bodyStress = weight * bodyTorque;
     const bodyStrength = cell.thickness * cell.strength * 3000;
 
-    cell.showLeaf = cell.thickness < 3;
+    cell.showLeaf = !cell.dead && cell.thickness < 3;
     const normalisedLeaf = Vector.normalise(cell.leaf);
     const leafSunDot = Vector.dot(normalisedLeaf, sunRay);
     const leafSunPlaneSize = Math.max(0, -leafSunDot);
@@ -194,7 +194,8 @@ function growCell(cell) {
       bodyStress > bodyStrength ||
       leafCount <= 0 ||
       (cell.showLeaf && growthScale < 0.001) ||
-      cell.leafY > innerHeight;
+      cell.leafY > innerHeight ||
+      (cell.isRoot && !cell.showLeaf && cell.children.length === 0);
 
     if (willCutChildren) {
       cutCellChildren(cell);
