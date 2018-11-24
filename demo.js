@@ -185,7 +185,7 @@ function growCell(cell) {
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * cell.strength * 40000;
+    const bodyStrength = cell.thickness * cell.strength * 400000;
 
     cell.showLeaf = !cell.dead && cell.thickness < 5;
     const normalisedLeaf = Vector.normalise(cell.leaf);
@@ -196,7 +196,7 @@ function growCell(cell) {
       leafSunPlaneSize * (cell.showLeaf ? 0.2 : 0) - shade * 0.5
     );
 
-    cell.thickness += (leafCount / weight) * 0.1;
+    cell.thickness += (leafCount / weight) * 0.15 * (5 / (5 + cell.order));
     const willCutChildren =
       bodyStress > bodyStrength ||
       leafCount <= 0 ||
@@ -291,7 +291,7 @@ function drawCell(x, y, cell) {
   });
 }
 
-const shadowsCount = 400;
+const shadowsCount = Math.floor(canvas.width / 4);
 
 function getShadeAt(x, y) {
   const index = getShadowIndex(x);
