@@ -97,7 +97,7 @@ class Cell {
       const mutateAmount = genome ? 0.05 : 1;
       this.genome = mutateGenome(genome || defaultGenome, mutateAmount);
       Object.assign(this, this.genome);
-      this.maxOrder = 20 * this.size;
+      this.maxOrder = 40 * this.size;
       this.order = 0;
       this.body = [0, -1];
       this.thickness = 1;
@@ -109,7 +109,7 @@ class Cell {
       this.thickness = Math.max(1, 0.1 * parentCell.thickness);
       this.order = parentCell.order + 1;
       this.maxLength =
-        (Math.random() * 300) / (2 + this.order * this.branchingTendency);
+        (Math.random() * 200) / (2 + this.order * this.branchingTendency);
       this.body = Vector.rotate(
         Vector.normalise(parentCell.body),
         branchingAngle
@@ -182,7 +182,7 @@ function growCell(cell) {
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * cell.strength * 3000;
+    const bodyStrength = cell.thickness * cell.strength * 5000;
 
     cell.showLeaf = !cell.dead && cell.thickness < 3;
     const normalisedLeaf = Vector.normalise(cell.leaf);
@@ -233,7 +233,7 @@ function growCell(cell) {
     const bendAmount =
       cell.elasticity *
       (bodyStress / bodyStrength) *
-      0.0002 *
+      0.0001 *
       Math.abs(Vector.dot(gravityNormal, cell.body)) *
       bendDirection;
     cell.body = Vector.rotate(cell.body, bendAmount);
