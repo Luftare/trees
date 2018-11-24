@@ -74,12 +74,12 @@ const defaultGenome = {
   size: 0.5,
 };
 
-function mutateGenome(genome) {
+function mutateGenome(genome, amount = 0.7) {
   const mutatedGenome = {};
   for (let propName in genome) {
-    mutatedGenome[propName] = Math.max(
-      0.001,
-      genome[propName] + (Math.random() - 0.5) * 1
+    mutatedGenome[propName] = Math.min(
+      1,
+      Math.max(0.001, genome[propName] + (Math.random() - 0.5) * amount)
     );
   }
   return mutatedGenome;
@@ -94,7 +94,8 @@ class Cell {
     this.leafY = 0;
 
     if (this.isRoot) {
-      this.genome = mutateGenome(genome || defaultGenome);
+      const mutateAmount = genome ? 0.05 : 1;
+      this.genome = mutateGenome(genome || defaultGenome, mutateAmount);
       Object.assign(this, this.genome);
       this.maxOrder = 20 * this.size;
       this.order = 0;
@@ -158,7 +159,7 @@ function growCell(cell) {
       killBranches(cell);
     }
     // console.log(leafCount);
-    if (childBranches > 10 && Math.random() > 0.995 && seeds.length < 500) {
+    if (childBranches > 5 && Math.random() > 0.995 && seeds.length < 500) {
       const root = getRoot(cell);
       const x = Math.max(
         0,
@@ -173,7 +174,7 @@ function growCell(cell) {
   }
   if (cell.dead) {
     cell.thickness = Math.max(1, cell.thickness - 0.002);
-    cell.body = Vector.scale(cell.body, 0.995);
+    cell.body = Vector.scale(cell.body, 0.99);
   } else {
     const shade = getShadeAt(cell.leafX, cell.leafY);
     this.length = Vector.length(cell.body);
