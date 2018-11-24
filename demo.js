@@ -71,6 +71,7 @@ const defaultGenome = {
   branchCutSurvivability: 0.5,
   growthSpeed: 0.5,
   strength: 0.5,
+  size: 0.5,
 };
 
 function mutateGenome(genome) {
@@ -78,7 +79,7 @@ function mutateGenome(genome) {
   for (let propName in genome) {
     mutatedGenome[propName] = Math.max(
       0.001,
-      genome[propName] + (Math.random() - 0.5) * 0.5
+      genome[propName] + (Math.random() - 0.5) * 1
     );
   }
   return mutatedGenome;
@@ -87,13 +88,15 @@ function mutateGenome(genome) {
 class Cell {
   constructor(parentCell, branchingAngle = 0, genome) {
     this.isRoot = !parentCell;
-    this.x = null;
-    this.y = null;
+    this.x = 0;
+    this.y = 0;
+    this.leafX = 0;
+    this.leafY = 0;
 
     if (this.isRoot) {
       this.genome = mutateGenome(genome || defaultGenome);
       Object.assign(this, this.genome);
-      this.maxOrder = 30;
+      this.maxOrder = 20 * this.size;
       this.order = 0;
       this.body = [0, -1];
       this.thickness = 1;
@@ -154,13 +157,13 @@ function growCell(cell) {
       killBranches(cell);
     }
     // console.log(leafCount);
-    if (leafCount > 18 && Math.random() > 0.99 && seeds.length < 26) {
+    if (leafCount > 18 && Math.random() > 0.995 && seeds.length < 100) {
       const root = getRoot(cell);
       const x = Math.max(
         0,
-        Math.min(innerWidth, root.x + (Math.random() - 0.5) * 200)
+        Math.min(innerWidth, root.x + (Math.random() - 0.5) * 50 * cell.order)
       );
-      const y = innerHeight - 100;
+      const y = root.y;
       const newCell = new Cell(null, 0, cell.genome);
       newCell.x = x;
       newCell.y = y;
@@ -171,26 +174,30 @@ function growCell(cell) {
     cell.thickness = Math.max(1, cell.thickness - 0.002);
     cell.body = Vector.scale(cell.body, 0.995);
   } else {
+    const shade = getShadeAt(cell.leafX, cell.leafY);
+    // console.log(shade);
     this.length = Vector.length(cell.body);
 
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * cell.strength * 10000;
-
-    const willCutChildren = bodyStress > bodyStrength || leafCount <= 0;
-
-    if (willCutChildren) {
-      cutCellChildren(cell);
-    }
+    const bodyStrength = cell.thickness * cell.strength * 5000;
 
     cell.showLeaf = cell.thickness < 3;
     const normalisedLeaf = Vector.normalise(cell.leaf);
     const leafSunDot = Vector.dot(normalisedLeaf, sunRay);
     const leafSunPlaneSize = Math.max(0, -leafSunDot);
 
-    const growthScale = cell.showLeaf ? leafSunPlaneSize : 0;
-    cell.thickness += (0.004 * leafCount) / weight;
+    const growthScale = Math.max(0, leafCount / weight - shade * 0.1);
+    cell.thickness += (0.005 * leafCount) / weight;
+    const willCutChildren =
+      bodyStress > bodyStrength ||
+      leafCount <= 0 ||
+      (cell.showLeaf && growthScale === 0);
+
+    if (willCutChildren) {
+      cutCellChildren(cell);
+    }
     if (this.length < cell.maxLength)
       cell.body = Vector.stretchBy(
         cell.body,
@@ -223,7 +230,7 @@ function growCell(cell) {
     const bendAmount =
       cell.elasticity *
       (weight / bodyStrength) *
-      0.0008 *
+      0.001 *
       Math.abs(Vector.dot(gravityNormal, cell.body)) *
       bendDirection;
     cell.body = Vector.rotate(cell.body, bendAmount);
@@ -254,7 +261,12 @@ function drawCell(x, y, cell) {
   ctx.lineWidth = cell.thickness;
   ctx.stroke();
 
+  cell.leafX = endPoint[0];
+  cell.leafY = endPoint[1];
   if (cell.showLeaf && !cell.dead) {
+    const shadowIndex = getShadowIndex(cell.leafX);
+    shadows[shadowIndex].push(cell.leafY);
+
     const leaf = Vector.scale(
       Vector.rotate(cell.leaf, (cell.leafSide * Math.PI) / 2),
       cell.leafSize
@@ -275,11 +287,30 @@ function drawCell(x, y, cell) {
   });
 }
 
+const shadowsCount = 400;
+
+function getShadeAt(x, y) {
+  const index = getShadowIndex(x);
+  const shadowColumn = shadows[index];
+  return shadowColumn.reduce((acc, num) => (num < y ? acc + 1 : acc), 0);
+}
+
+function getShadowIndex(x) {
+  const shadowWidth = innerWidth / shadowsCount;
+  return Math.min(shadowsCount - 1, Math.max(0, Math.floor(x / shadowWidth)));
+}
+
+function resetShadows() {
+  shadows = shadows.map(() => []);
+}
+
+let shadows = [...Array(shadowsCount)].map(() => []);
+
 const startSeedsCount = 5;
 
 let seeds = [...Array(startSeedsCount)].map((_, i) => {
   const x = ((i + 0.5) / startSeedsCount) * innerWidth;
-  const y = innerHeight - 100;
+  const y = innerHeight;
   const seed = new Cell();
   seed.x = x;
   seed.y = y;
@@ -291,6 +322,9 @@ setInterval(() => {
   seeds = seeds.filter(seed => !seed.dead);
   seeds.forEach(seed => {
     growCell(seed);
+  });
+  resetShadows();
+  seeds.forEach(seed => {
     drawCell(seed.x, seed.y, seed);
   });
-}, 20);
+}, 50);
