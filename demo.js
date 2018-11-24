@@ -151,17 +151,18 @@ function getRoot(cell) {
 
 function growCell(cell) {
   const leafCount = childrenLeafs(cell);
+  const childBranches = childBranchCount(cell);
 
   if (cell.isRoot) {
     if (!cell.dead && leafCount <= 0) {
       killBranches(cell);
     }
     // console.log(leafCount);
-    if (leafCount > 18 && Math.random() > 0.995 && seeds.length < 100) {
+    if (childBranches > 10 && Math.random() > 0.995 && seeds.length < 100) {
       const root = getRoot(cell);
       const x = Math.max(
         0,
-        Math.min(innerWidth, root.x + (Math.random() - 0.5) * 50 * cell.order)
+        Math.min(innerWidth, root.x + (Math.random() - 0.5) * 500)
       );
       const y = root.y;
       const newCell = new Cell(null, 0, cell.genome);
@@ -175,20 +176,19 @@ function growCell(cell) {
     cell.body = Vector.scale(cell.body, 0.995);
   } else {
     const shade = getShadeAt(cell.leafX, cell.leafY);
-    // console.log(shade);
     this.length = Vector.length(cell.body);
 
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * cell.strength * 5000;
+    const bodyStrength = cell.thickness * cell.strength * 3000;
 
     cell.showLeaf = cell.thickness < 3;
     const normalisedLeaf = Vector.normalise(cell.leaf);
     const leafSunDot = Vector.dot(normalisedLeaf, sunRay);
     const leafSunPlaneSize = Math.max(0, -leafSunDot);
 
-    const growthScale = Math.max(0, leafCount / weight - shade * 0.1);
+    const growthScale = Math.max(0, leafCount / weight - shade * 0.07);
     cell.thickness += (0.005 * leafCount) / weight;
     const willCutChildren =
       bodyStress > bodyStrength ||
@@ -229,8 +229,8 @@ function growCell(cell) {
     const bendDirection = cell.body[0] > 0 ? 1 : -1;
     const bendAmount =
       cell.elasticity *
-      (weight / bodyStrength) *
-      0.001 *
+      (bodyStress / bodyStrength) *
+      0.0003 *
       Math.abs(Vector.dot(gravityNormal, cell.body)) *
       bendDirection;
     cell.body = Vector.rotate(cell.body, bendAmount);
@@ -327,4 +327,4 @@ setInterval(() => {
   seeds.forEach(seed => {
     drawCell(seed.x, seed.y, seed);
   });
-}, 50);
+}, 20);
