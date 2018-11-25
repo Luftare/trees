@@ -123,7 +123,7 @@ class Cell {
       this.maxOrder = parentCell.maxOrder + Math.random() * 0.5;
     }
     this.seedingAgeCycle = Math.floor(
-      (this.size * 800) / (0.5 + this.seedingAmount)
+      (this.size * 800) / (0.5 + this.seedingAmount + this.growthSpeed)
     );
     this.dead = false;
     this.children = [];
@@ -201,7 +201,7 @@ function growCell(cell) {
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * 15000;
+    const bodyStrength = cell.thickness * 20000;
 
     cell.showLeaf = !cell.dead && cell.thickness < 4;
     const normalisedLeaf = Vector.normalise(cell.leaf);
@@ -220,7 +220,7 @@ function growCell(cell) {
     const touchingGround = cell.leafY > canvas.height;
     const noAliveBranches =
       cell.isRoot && !cell.showLeaf && cell.children.length === 0;
-    const notEnoughLeafs = weight > leafCount * 300;
+    const notEnoughLeafs = weight * cell.growthSpeed > leafCount * 100;
     const willCutChildren =
       tooMuchStress ||
       noLeafs ||
@@ -259,16 +259,6 @@ function growCell(cell) {
             angleSign;
           cell.children.push(new Cell(cell, branchAngle));
         }
-
-        // if (Math.random() < cell.branchingTendency + 0.2) {
-        //   const branchAngle =
-        //     -Math.random() *
-        //     Math.PI *
-        //     0.5 *
-        //     cell.branchAngularTendency *
-        //     angleSign;
-        //   cell.children.push(new Cell(cell, branchAngle));
-        // }
       }
     }
 
