@@ -130,7 +130,7 @@ class Cell {
     const leafAngle = (Math.random() - 0.5) * 0.1;
     this.leaf = Vector.rotate(Vector.normalise(this.body), leafAngle);
     this.leafSide = Math.random() > 0.5 ? 1 : -1;
-    this.leafSize = 5 + Math.random() * 5 + this.order * 0.5;
+    this.leafSize = 5 + Math.random() * 2 + this.order * 1;
     this.showLeaf = true;
     this.length = 1;
   }
@@ -189,7 +189,7 @@ function growCell(cell) {
   if (cell.dead) {
     cell.deadAge++;
 
-    if (cell.parentCell && cell.deadAge > 200) {
+    if (cell.parentCell && cell.deadAge > 100) {
       cell.parentCell.children = cell.parentCell.children.filter(
         sibling => sibling !== cell
       );
@@ -203,20 +203,25 @@ function growCell(cell) {
     const bodyStress = weight * bodyTorque;
     const bodyStrength = cell.thickness * 20000;
 
-    cell.showLeaf = !cell.dead && cell.thickness < 4;
+    cell.showLeaf = !cell.dead && cell.thickness < 6 * cell.size;
     const normalisedLeaf = Vector.normalise(cell.leaf);
     const leafSunDot = Vector.dot(normalisedLeaf, sunRay);
     const leafSunPlaneSize = Math.max(0, -leafSunDot);
     const growthFactor = Math.max(
       0,
-      (5 / (5 + cell.order)) * leafSunPlaneSize * (cell.showLeaf ? 0.2 : 0) -
-        shade
+      (5 / (5 + cell.order + cell.size)) *
+        leafSunPlaneSize *
+        (cell.showLeaf ? 0.2 : 0) -
+        shade * 0.1
     );
 
-    cell.thickness += (leafCount / weight) * 0.15 * (5 / (5 + cell.order));
+    cell.thickness +=
+      (leafCount / weight) *
+      0.1 *
+      (5 / (5 + cell.order + cell.growthSpeed * 5));
     const tooMuchStress = bodyStress > bodyStrength;
     const noLeafs = leafCount <= 0 && cell.isRoot;
-    const tooMuchShade = cell.showLeaf && shade * cell.growthSpeed > 20;
+    const tooMuchShade = cell.showLeaf && shade * cell.growthSpeed > 30;
     const touchingGround = cell.leafY > canvas.height;
     const noAliveBranches =
       cell.isRoot && !cell.showLeaf && cell.children.length === 0;
@@ -243,22 +248,17 @@ function growCell(cell) {
 
     if (cell.order < cell.maxOrder) {
       const willBranch =
-        (cell.branchingTendency * cell.length) / (10 + cell.order) > 1 &&
+        (2 * (cell.branchingTendency * cell.length)) / (1 + cell.order) > 1 &&
         cell.children.length <= 0;
       if (willBranch) {
         const angleSign = Math.random() > 0.5 ? 1 : -1;
-        const bodyAngle = Math.random() * cell.bodyBendingTendency * angleSign;
+        const bodyAngle =
+          0.5 * Math.random() * cell.bodyBendingTendency * angleSign;
         cell.children.push(new Cell(cell, bodyAngle));
 
-        if (Math.random() < cell.branchingTendency + 0.2) {
-          const branchAngle =
-            -Math.random() *
-            Math.PI *
-            0.5 *
-            cell.branchAngularTendency *
-            angleSign;
-          cell.children.push(new Cell(cell, branchAngle));
-        }
+        const branchAngle =
+          -Math.random() * Math.PI * 2 * cell.branchAngularTendency * angleSign;
+        cell.children.push(new Cell(cell, branchAngle));
       }
     }
 
@@ -281,7 +281,7 @@ function growCell(cell) {
       (cell.elasticity * 1) /
       (0.3 + cell.thickness * 10 + leafSunPlaneSize * 5);
     const bodyRotateAngle = (Math.random() - 0.5) * rotateAmount;
-    cell.body = Vector.rotate(cell.body, bodyRotateAngle);
+    cell.angle += bodyRotateAngle;
   }
 }
 
@@ -324,7 +324,7 @@ function drawCell(x, y, cell) {
   });
 }
 
-const shadowsCount = Math.floor(canvas.width / 4);
+const shadowsCount = Math.floor(canvas.width / 5);
 
 function getShadeAt(x, y) {
   const index = getShadowIndex(x);
