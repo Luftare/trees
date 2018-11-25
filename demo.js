@@ -287,8 +287,8 @@ function growCell(cell) {
 
 function drawCell(x, y, cell) {
   const endPoint = [x + cell.body[0], y + cell.body[1]];
-  const redValue = Math.min(4000 / (cell.thickness + 100), 250);
-  const greenValue = Math.min(3000 / (cell.thickness + 50), 250);
+  const redValue = Math.min(cell.thickness * 10, 150);
+  const greenValue = Math.min(1200 / (cell.thickness + 10), 250);
   ctx.strokeStyle = cell.dead ? '#777' : `rgb(${redValue},${greenValue},0)`;
   ctx.beginPath();
   ctx.moveTo(x, y);
