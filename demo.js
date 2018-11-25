@@ -201,7 +201,7 @@ function growCell(cell) {
     const weight = childrenWeight(cell);
     const bodyTorque = Math.abs(Vector.dot([1, 0], cell.body));
     const bodyStress = weight * bodyTorque;
-    const bodyStrength = cell.thickness * 5000;
+    const bodyStrength = cell.thickness * 15000;
 
     cell.showLeaf = !cell.dead && cell.thickness < 4;
     const normalisedLeaf = Vector.normalise(cell.leaf);
@@ -277,10 +277,10 @@ function growCell(cell) {
     const bendAmount =
       cell.elasticity *
       (bodyStress / bodyStrength) *
-      0.0002 *
+      0.0001 *
       Math.abs(Vector.dot(gravityNormal, cell.body)) *
       bendDirection;
-    cell.body = Vector.rotate(cell.body, bendAmount);
+    cell.angle += bendAmount;
 
     cell.children.forEach(childCell => {
       growCell(childCell);
