@@ -78,8 +78,8 @@ function mutateGenome(genome, amount = 0.7) {
   const mutatedGenome = {};
   for (let propName in genome) {
     mutatedGenome[propName] = Math.min(
-      1,
-      Math.max(0.001, genome[propName] + (Math.random() - 0.5) * amount)
+      0.9,
+      Math.max(0.1, genome[propName] + (Math.random() - 0.5) * amount)
     );
   }
   return mutatedGenome;
